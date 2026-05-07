@@ -590,10 +590,16 @@ function updateCharts() {
     const categoryTotals = categories.map(cat => {
         // sum in base LKR
         const totalLKR = filteredExpenses.filter(e => {
-            if (e.category === cat) return true;
-            // Legacy support: count 'Food' as 'Lunch'
-            if (cat === 'Lunch' && e.category === 'Food') return true;
-            return false;
+            // If it's a food-related category, divide by time
+            if (e.category === 'Food' || e.category === 'Breakfast' || e.category === 'Lunch' || e.category === 'Dinner') {
+                const hour = new Date(e.timestamp).getHours();
+                if (cat === 'Breakfast') return hour >= 4 && hour < 11;
+                if (cat === 'Lunch') return hour >= 11 && hour < 17;
+                if (cat === 'Dinner') return hour >= 17 || hour < 4;
+                return false;
+            }
+            // Otherwise match normally
+            return e.category === cat;
         }).reduce((sum, e) => sum + e.amount, 0);
         return convertFromBase(totalLKR, state.currency); // chart visual in target currency
     });

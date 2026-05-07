@@ -1,9 +1,20 @@
 const { neon } = require('@neondatabase/serverless');
 
 exports.handler = async (event, context) => {
-    // Only allow POST and GET
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Content-Type': 'application/json'
+    };
+
+    // Handle preflight OPTIONS request
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
+
     if (event.httpMethod !== 'POST' && event.httpMethod !== 'GET') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
+        return { statusCode: 405, headers, body: 'Method Not Allowed' };
     }
 
     const sql = neon(process.env.DATABASE_URL);
@@ -13,7 +24,7 @@ exports.handler = async (event, context) => {
             const { userId, state } = JSON.parse(event.body);
             
             if (!userId) {
-                return { statusCode: 400, body: 'User ID required' };
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'User ID required' }) };
             }
 
             // Upsert the user data
@@ -28,6 +39,7 @@ exports.handler = async (event, context) => {
 
             return {
                 statusCode: 200,
+                headers,
                 body: JSON.stringify({ message: 'Sync successful' })
             };
         }
@@ -36,7 +48,7 @@ exports.handler = async (event, context) => {
             const userId = event.queryStringParameters.userId;
 
             if (!userId) {
-                return { statusCode: 400, body: 'User ID required' };
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'User ID required' }) };
             }
 
             const result = await sql`
@@ -44,18 +56,24 @@ exports.handler = async (event, context) => {
             `;
 
             if (result.length === 0) {
-                return { statusCode: 404, body: 'User not found' };
+                return { statusCode: 404, headers, body: JSON.stringify({ error: 'User not found' }) };
             }
+
+            // result[0].state is already an object if the column is JSONB
+            const stateData = result[0].state;
+            const body = typeof stateData === 'string' ? stateData : JSON.stringify(stateData);
 
             return {
                 statusCode: 200,
-                body: JSON.stringify(JSON.parse(result[0].state))
+                headers,
+                body: body
             };
         }
     } catch (error) {
         console.error('Database Error:', error);
         return {
             statusCode: 500,
+            headers,
             body: JSON.stringify({ error: 'Database connection failed', details: error.message })
         };
     }

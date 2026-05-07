@@ -1,8 +1,6 @@
-# 💰 Flux - Professional Student Finance Tracker
+# 💰 Fund Tracker - Professional Student Finance Management
 
-Flux is a premium, state-of-the-art personal finance management tool designed specifically for students. Built with a focus on professional aesthetics and advanced data reporting, it helps you track every rupee, dollar, or euro with precision and style.
-
-![Professional Dashboard](https://raw.githubusercontent.com/ItzMeIsuru/Fund-Tracker/main/screenshot_demo.png) *(Note: Add your own screenshot here)*
+Fund Tracker is a premium, state-of-the-art personal finance management tool designed specifically for students. Built with a focus on professional aesthetics and advanced data reporting, it helps you track every rupee, dollar, or euro with precision and style.
 
 ## ✨ Features
 

@@ -69,4 +69,4 @@ Contributions are what make the open-source community such an amazing place to l
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
-**Developed with ❤️ by [Upendra Dasanayaka](https://github.com/ItzMeIsuru)**
+**Developed with ❤️ by [Isuru Lakruwan](https://github.com/ItzMeIsuru)**

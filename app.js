@@ -13,7 +13,8 @@ let state = {
     daysLeft: 1,
     lastUpdatedDate: null,
     editingId: null,
-    savingsMode: 'income' // 'income' or 'budget'
+    savingsMode: 'income', // 'income' or 'budget'
+    currentWindow: 0 // Index of the 3-day window for pagination
 };
 
 const currencySymbols = {
@@ -117,9 +118,15 @@ const DOMElements = {
     emojiContainer: document.getElementById('emoji-container'),
     emptyState: document.getElementById('empty-state'),
 
+    exportCsvBtn: document.getElementById('export-csv'),
     exportPdfBtn: document.getElementById('export-pdf'),
     resetDataBtn: document.getElementById('reset-data'),
     toastContainer: document.getElementById('toast-container'),
+
+    paginationControls: document.getElementById('pagination-controls'),
+    prevPageBtn: document.getElementById('prev-page'),
+    nextPageBtn: document.getElementById('next-page'),
+    pageInfo: document.getElementById('page-info'),
 
     expensePieChartCtx: document.getElementById('expensePieChart').getContext('2d'),
     weeklyBarChartCtx: document.getElementById('weeklyBarChart').getContext('2d'),
@@ -136,7 +143,6 @@ function init() {
     applyTheme();
     setDefaultTime();
     updateExchangeRates(); // Fetch fresh rates asynchronously
-    startFloatingEmojis();
 
     // Check for "Remember Me" / Auto-login
     const lastUser = localStorage.getItem('financeTracker_currentUser');
@@ -205,6 +211,15 @@ function setDefaultTime() {
     if (DOMElements.transactionTime) {
         DOMElements.transactionTime.value = localISOTime;
     }
+}
+
+function getWindowIdx(ts) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    const diff = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.floor(Math.max(0, diff) / 3);
 }
 
 function loadState() {
@@ -417,45 +432,61 @@ function renderTransactions() {
 
     if (state.transactions.length === 0) {
         DOMElements.emptyState.style.display = 'block';
+        DOMElements.paginationControls.classList.add('hidden');
         return;
     }
 
     DOMElements.emptyState.style.display = 'none';
 
-    // Show latest first
-    const sorted = [...state.transactions].sort((a, b) => b.timestamp - a.timestamp);
+    // Filter by current window
+    const filtered = state.transactions.filter(t => getWindowIdx(t.timestamp) === state.currentWindow);
+    
+    // Sort filtered transactions (latest first)
+    const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
 
-    sorted.forEach(t => {
-        const row = document.createElement('tr');
-        const dateObj = new Date(t.timestamp);
-        const dateStr = dateObj.toLocaleDateString();
-        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Update Pagination UI
+    const maxWindow = state.transactions.reduce((max, t) => Math.max(max, getWindowIdx(t.timestamp)), 0);
+    
+    DOMElements.paginationControls.classList.remove('hidden');
+    DOMElements.pageInfo.textContent = `Days ${state.currentWindow * 3} - ${state.currentWindow * 3 + 2} ago`;
+    DOMElements.prevPageBtn.disabled = state.currentWindow === 0;
+    DOMElements.nextPageBtn.disabled = state.currentWindow >= maxWindow;
 
-        row.innerHTML = `
-            <td data-label="Actions">
-                <div class="action-btns">
-                    ${t.type === 'income' ? `
-                        <button class="btn-budget ${t.inBudget ? 'active' : ''}" onclick="toggleIncomeBudget('${t.id}')" title="${t.inBudget ? 'Remove from Budget' : 'Add to Budget'}">
-                            <i class="fa-solid fa-vault"></i>
-                        </button>
-                    ` : ''}
-                    <button class="btn-edit" onclick="startEdit('${t.id}')" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button class="btn-delete" onclick="deleteTransaction('${t.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </td>
-            <td data-label="Date">
-                <div class="date-text">${dateStr}</div>
-                <div class="time-text subtitle">${timeStr}</div>
-            </td>
-            <td data-label="Description">${t.desc}</td>
-            <td data-label="Category">${t.type === 'expense' ? t.category : '-'}</td>
-            <td data-label="Amount" class="${t.type === 'income' ? 'text-success' : 'text-danger'}">
-                ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
-            </td>
-            <td data-label="Type">${t.type === 'income' ? '<i class="fa-solid fa-arrow-down text-success"></i>' : '<i class="fa-solid fa-arrow-up text-danger"></i>'}</td>
-        `;
-        list.appendChild(row);
-    });
+    if (sorted.length === 0) {
+        list.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">No transactions in this period.</td></tr>`;
+    } else {
+        sorted.forEach(t => {
+            const row = document.createElement('tr');
+            const dateObj = new Date(t.timestamp);
+            const dateStr = dateObj.toLocaleDateString();
+            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            row.innerHTML = `
+                <td data-label="Actions">
+                    <div class="action-btns">
+                        ${t.type === 'income' ? `
+                            <button class="btn-budget ${t.inBudget ? 'active' : ''}" onclick="toggleIncomeBudget('${t.id}')" title="${t.inBudget ? 'Remove from Budget' : 'Add to Budget'}">
+                                <i class="fa-solid fa-vault"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn-edit" onclick="startEdit('${t.id}')" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-delete" onclick="deleteTransaction('${t.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </td>
+                <td data-label="Date">
+                    <div class="date-text">${dateStr}</div>
+                    <div class="time-text subtitle">${timeStr}</div>
+                </td>
+                <td data-label="Description">${t.desc}</td>
+                <td data-label="Category">${t.type === 'expense' ? t.category : '-'}</td>
+                <td data-label="Amount" class="${t.type === 'income' ? 'text-success' : 'text-danger'}">
+                    ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+                </td>
+                <td data-label="Type">${t.type === 'income' ? '<i class="fa-solid fa-arrow-down text-success"></i>' : '<i class="fa-solid fa-arrow-up text-danger"></i>'}</td>
+            `;
+            list.appendChild(row);
+        });
+    }
 }
 
 window.toggleIncomeBudget = function (id) {
@@ -847,6 +878,7 @@ function setupEventListeners() {
             }
 
             saveState();
+            state.currentWindow = getWindowIdx(timestamp); // Jump to the window of the added/edited transaction
             updateUI();
 
             if (!state.editingId) {
@@ -857,7 +889,33 @@ function setupEventListeners() {
         }
     });
 
-    DOMElements.exportPdfBtn.addEventListener('click', () => {
+    DOMElements.exportCsvBtn.addEventListener('click', () => {
+        if (state.transactions.length === 0) {
+            showToast('No data to export', 'warning');
+            return;
+        }
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += `Date,Time,Description,Type,Category,Amount (${state.currency})\n`;
+
+        state.transactions.forEach(t => {
+            const dateObj = new Date(t.timestamp);
+            const date = dateObj.toLocaleDateString();
+            const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const convertedAmount = convertFromBase(t.amount, state.currency).toFixed(2);
+            csvContent += `${date},${time},${t.desc},${t.type},${t.category || ''},${convertedAmount}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "finance_tracker_data.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    DOMElements.exportPdfBtn.addEventListener('click', async () => {
         if (state.transactions.length === 0) {
             showToast('No data to export', 'warning');
             return;
@@ -866,70 +924,79 @@ function setupEventListeners() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        // Header
-        doc.setFontSize(22);
-        doc.setTextColor(79, 70, 229); // Primary color
-        doc.text("Student Finance Report", 14, 22);
-        
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`User: ${state.user}`, 14, 32);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 38);
-        doc.text(`Current Currency: ${state.currency}`, 14, 44);
-
-        // Summary Section
-        const incomeLKR = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const expenseLKR = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-
-        doc.setFontSize(14);
-        doc.setTextColor(0);
-        doc.text("Summary Overview", 14, 55);
-        
-        doc.setFontSize(12);
-        doc.text(`Total Income: ${formatCurrency(incomeLKR)}`, 14, 65);
-        doc.text(`Total Expenses: ${formatCurrency(expenseLKR)}`, 14, 72);
-        
-        const balance = incomeLKR - expenseLKR;
-        doc.setTextColor(balance >= 0 ? [16, 185, 129] : [239, 68, 68]);
-        doc.text(`Net Balance: ${formatCurrency(balance)}`, 14, 79);
-
-        // Transaction Table
-        const tableData = [...state.transactions].sort((a, b) => b.timestamp - a.timestamp).map(t => {
-            const dateObj = new Date(t.timestamp);
-            return [
-                `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-                t.desc,
-                t.type === 'expense' ? (t.category || 'Other') : 'Income',
-                formatCurrency(t.amount),
-                t.type.charAt(0).toUpperCase() + t.type.slice(1)
-            ];
+        // Group transactions by window
+        const windows = {};
+        state.transactions.forEach(t => {
+            const idx = getWindowIdx(t.timestamp);
+            if (!windows[idx]) windows[idx] = [];
+            windows[idx].push(t);
         });
 
-        doc.autoTable({
-            startY: 85,
-            head: [['Date & Time', 'Description', 'Category', 'Amount', 'Type']],
-            body: tableData,
-            theme: 'striped',
-            headStyles: { fillColor: [79, 70, 229], fontSize: 11, halign: 'center' },
-            bodyStyles: { fontSize: 10 },
-            columnStyles: {
-                3: { halign: 'right' }, // Amount
-                4: { halign: 'center' } // Type
-            },
-            margin: { top: 10 }
-        });
+        const sortedWindowIndices = Object.keys(windows).map(Number).sort((a, b) => a - b);
+        
+        let firstPage = true;
+        for (const idx of sortedWindowIndices) {
+            if (!firstPage) doc.addPage();
+            firstPage = false;
 
-        // Add Footer with page numbers
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
+            // Title & Info
+            doc.setFontSize(22);
+            doc.setTextColor(6, 182, 212); // Cyan Primary Color
+            doc.text("Finance Tracker Report", 14, 22);
+            
             doc.setFontSize(10);
-            doc.setTextColor(150);
-            doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+            doc.setTextColor(100, 116, 139); // Text Secondary
+            doc.text(`User: ${state.user}`, 14, 32);
+            doc.text(`Period: Days ${idx * 3} to ${idx * 3 + 2} ago`, 14, 37);
+            doc.text(`Currency: ${state.currency}`, 14, 42);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 47);
+
+            // Table
+            const tableData = windows[idx].sort((a, b) => b.timestamp - a.timestamp).map(t => [
+                new Date(t.timestamp).toLocaleDateString(),
+                new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                t.desc,
+                t.type === 'expense' ? t.category : 'Income',
+                `${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`,
+                t.type.toUpperCase()
+            ]);
+
+            doc.autoTable({
+                startY: 55,
+                head: [['Date', 'Time', 'Description', 'Category', 'Amount', 'Type']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [6, 182, 212], textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 9, cellPadding: 4 },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { top: 55 }
+            });
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.setFontSize(10);
+            doc.text(`Page ${pageCount}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10);
         }
 
-        doc.save(`finance_report_${state.user}_${new Date().toISOString().split('T')[0]}.pdf`);
-        showToast('PDF generated successfully!', 'success');
+        const safeUsername = (state.user || "Student").replace(/[^a-z0-9]/gi, '_');
+        doc.save(`Finance_Report_${safeUsername}_${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('PDF Exported Successfully!', 'success');
+    });
+
+    DOMElements.prevPageBtn.addEventListener('click', () => {
+        if (state.currentWindow > 0) {
+            state.currentWindow--;
+            renderTransactions();
+        }
+    });
+
+    DOMElements.nextPageBtn.addEventListener('click', () => {
+        const maxWindow = state.transactions.reduce((max, t) => Math.max(max, getWindowIdx(t.timestamp)), 0);
+        
+        if (state.currentWindow < maxWindow) {
+            state.currentWindow++;
+            renderTransactions();
+        }
     });
 
     DOMElements.resetDataBtn.addEventListener('click', () => {
@@ -989,45 +1056,3 @@ function showToast(message, type = 'success') {
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
-// ============================================
-// Floating Emojis Background Logic
-// ============================================
-function startFloatingEmojis() {
-    const emojis = ['💰', '💵', '💸', '💹', '🏦', '💳', '📈', '💎', '🤑', '🪙'];
-    const container = DOMElements.emojiContainer;
-
-    if (!container) return;
-
-    function spawnEmoji() {
-        const emoji = document.createElement('div');
-        emoji.className = 'floating-emoji';
-        emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-
-        // Randomize position and animation
-        const left = Math.random() * 100;
-        const duration = 10 + Math.random() * 15; // 10s to 25s
-        const size = 0.8 + Math.random() * 1.5; // 0.8rem to 2.3rem
-        const delay = Math.random() * 5;
-
-        emoji.style.left = `${left}%`;
-        emoji.style.animationDuration = `${duration}s`;
-        emoji.style.fontSize = `${size}rem`;
-        emoji.style.animationDelay = `${delay}s`;
-
-        container.appendChild(emoji);
-
-        // Cleanup after animation
-        setTimeout(() => {
-            emoji.remove();
-        }, (duration + delay) * 1000);
-    }
-
-    // Spawn initial set
-    for (let i = 0; i < 15; i++) {
-        spawnEmoji();
-    }
-
-    // Periodically spawn new ones
-    setInterval(spawnEmoji, 2000);
-}

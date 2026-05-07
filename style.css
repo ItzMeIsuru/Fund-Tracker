@@ -25,20 +25,20 @@
 }
 
 .dark-theme {
-    /* Dark Theme Palette */
-    --bg-color: #0f172a;
-    --panel-bg: rgba(30, 41, 59, 0.7);
-    --panel-border: rgba(255, 255, 255, 0.05);
+    /* Dark Theme Palette - True Black Professional */
+    --bg-color: #000000;
+    --panel-bg: rgba(18, 18, 18, 0.8);
+    --panel-border: rgba(255, 255, 255, 0.08);
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --primary-color: #6366f1;
-    --primary-hover: #818cf8;
-    --success-color: #34d399;
-    --danger-color: #f87171;
-    --warning-color: #fbbf24;
-    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    --input-bg: rgba(15, 23, 42, 0.8);
-    --input-border: #334155;
+    --primary-color: #06b6d4; /* Cyan/Teal accent for professional look */
+    --primary-hover: #0891b2;
+    --success-color: #10b981;
+    --danger-color: #f43f5e;
+    --warning-color: #f59e0b;
+    --card-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.6);
+    --input-bg: rgba(10, 10, 10, 0.8);
+    --input-border: #262626;
     --is-dark: 1;
 }
 
@@ -739,6 +739,38 @@ input:checked + .slider:before {
     display: none;
 }
 
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--input-border);
+}
+
+.pagination-controls span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    min-width: 100px;
+    text-align: center;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+#export-pdf {
+    color: #ef4444; /* PDF Red */
+}
+
+.dark-theme #export-pdf {
+    color: #f87171;
+}
+
 .empty-state i {
     font-size: 3rem;
     margin-bottom: 16px;
@@ -893,28 +925,6 @@ input:checked + .slider:before {
     }
 }
 
-/* Floating Emojis Background */
-.emoji-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: -1;
-    overflow: hidden;
-}
-
-.floating-emoji {
-    position: absolute;
-    bottom: -50px;
-    font-size: 1.5rem;
-    opacity: 0;
-    user-select: none;
-    animation: float-up linear forwards;
-}
-
-
 /* Responsive Design */
 @media (max-width: 1024px) {
     .main-grid {
@@ -1037,22 +1047,6 @@ input:checked + .slider:before {
     }
 }
 
-@keyframes float-up {
-    0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 0;
-    }
-    10% {
-        opacity: 0.4;
-    }
-    90% {
-        opacity: 0.4;
-    }
-    100% {
-        transform: translateY(-110vh) rotate(360deg);
-        opacity: 0;
-    }
-}
 /* Sync Status Indicator */
 .sync-status {
     width: 32px;

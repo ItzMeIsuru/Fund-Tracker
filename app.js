@@ -117,7 +117,7 @@ const DOMElements = {
     emojiContainer: document.getElementById('emoji-container'),
     emptyState: document.getElementById('empty-state'),
 
-    exportCsvBtn: document.getElementById('export-csv'),
+    exportPdfBtn: document.getElementById('export-pdf'),
     resetDataBtn: document.getElementById('reset-data'),
     toastContainer: document.getElementById('toast-container'),
 
@@ -857,30 +857,79 @@ function setupEventListeners() {
         }
     });
 
-    DOMElements.exportCsvBtn.addEventListener('click', () => {
+    DOMElements.exportPdfBtn.addEventListener('click', () => {
         if (state.transactions.length === 0) {
             showToast('No data to export', 'warning');
             return;
         }
 
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += `Date,Time,Description,Type,Category,Amount (${state.currency})\n`;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(79, 70, 229); // Primary color
+        doc.text("Student Finance Report", 14, 22);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`User: ${state.user}`, 14, 32);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 38);
+        doc.text(`Current Currency: ${state.currency}`, 14, 44);
 
-        state.transactions.forEach(t => {
+        // Summary Section
+        const incomeLKR = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const expenseLKR = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.text("Summary Overview", 14, 55);
+        
+        doc.setFontSize(12);
+        doc.text(`Total Income: ${formatCurrency(incomeLKR)}`, 14, 65);
+        doc.text(`Total Expenses: ${formatCurrency(expenseLKR)}`, 14, 72);
+        
+        const balance = incomeLKR - expenseLKR;
+        doc.setTextColor(balance >= 0 ? [16, 185, 129] : [239, 68, 68]);
+        doc.text(`Net Balance: ${formatCurrency(balance)}`, 14, 79);
+
+        // Transaction Table
+        const tableData = [...state.transactions].sort((a, b) => b.timestamp - a.timestamp).map(t => {
             const dateObj = new Date(t.timestamp);
-            const date = dateObj.toLocaleDateString();
-            const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const convertedAmount = convertFromBase(t.amount, state.currency).toFixed(2);
-            csvContent += `${date},${time},${t.desc},${t.type},${t.category || ''},${convertedAmount}\n`;
+            return [
+                `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                t.desc,
+                t.type === 'expense' ? (t.category || 'Other') : 'Income',
+                formatCurrency(t.amount),
+                t.type.charAt(0).toUpperCase() + t.type.slice(1)
+            ];
         });
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "finance_tracker_data.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        doc.autoTable({
+            startY: 85,
+            head: [['Date & Time', 'Description', 'Category', 'Amount', 'Type']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: { fillColor: [79, 70, 229], fontSize: 11, halign: 'center' },
+            bodyStyles: { fontSize: 10 },
+            columnStyles: {
+                3: { halign: 'right' }, // Amount
+                4: { halign: 'center' } // Type
+            },
+            margin: { top: 10 }
+        });
+
+        // Add Footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        }
+
+        doc.save(`finance_report_${state.user}_${new Date().toISOString().split('T')[0]}.pdf`);
+        showToast('PDF generated successfully!', 'success');
     });
 
     DOMElements.resetDataBtn.addEventListener('click', () => {

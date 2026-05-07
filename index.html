@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -202,8 +205,8 @@
                 <div class="section-header space-between">
                     <h2><i class="fa-solid fa-list-ul"></i> Recent Transactions</h2>
                     <div>
-                        <button id="export-csv" class="btn-secondary btn-sm"><i class="fa-solid fa-download"></i>
-                            CSV</button>
+                        <button id="export-pdf" class="btn-secondary btn-sm"><i class="fa-solid fa-file-pdf"></i>
+                            PDF</button>
                         <button id="reset-data" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>
                             Reset</button>
                     </div>

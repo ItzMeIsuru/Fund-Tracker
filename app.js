@@ -153,9 +153,16 @@ function init() {
     }
 }
 
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function handleDaysLeftLogic() {
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const todayStr = getLocalDateString(now);
 
     // Default calculation: days remaining in current month
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -735,7 +742,7 @@ function setupEventListeners() {
             handleDaysLeftLogic();
         } else {
             state.daysLeft = Number(val) || 0;
-            state.lastUpdatedDate = new Date().toISOString().split('T')[0];
+            state.lastUpdatedDate = getLocalDateString();
             saveState();
         }
         updateUI();

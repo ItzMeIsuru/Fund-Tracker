@@ -94,6 +94,7 @@ const DOMElements = {
     daysLeftInput: document.getElementById('days-left'),
     savingsProgressText: document.getElementById('savings-progress-text'),
     savingsProgressBar: document.getElementById('savings-progress-bar'),
+    savingsProgressContainer: document.getElementById('savings-progress-container'),
 
     dailyAllowanceValue: document.getElementById('daily-allowance-value'),
     dailyWarningSign: document.getElementById('daily-warning-sign'),
@@ -301,6 +302,15 @@ function updateUI() {
                 btn.classList.remove('active');
             }
         });
+    }
+
+    // Toggle savings progress visibility
+    if (DOMElements.savingsProgressContainer) {
+        if (state.savingsMode === 'budget') {
+            DOMElements.savingsProgressContainer.classList.add('hidden');
+        } else {
+            DOMElements.savingsProgressContainer.classList.remove('hidden');
+        }
     }
 
     // Calculate totals (Internal LKR)

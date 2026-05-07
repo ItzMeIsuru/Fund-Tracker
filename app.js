@@ -140,6 +140,7 @@ function init() {
     if (lastUser) {
         loadUserData(lastUser).then(() => {
             showApp();
+            updateCharts(); // Refresh charts once visible to ensure correct dimensions and colors
             showToast(`Welcome back!`, 'success');
         }).catch(() => {
             DOMElements.loginOverlay.classList.add('active');
@@ -271,8 +272,8 @@ async function loadUserData(userId) {
 
     // Refresh UI
     handleDaysLeftLogic();
-    updateUI();
     applyTheme();
+    updateUI();
 
     // Save as current user for auto-login
     localStorage.setItem('financeTracker_currentUser', userId);
@@ -654,6 +655,7 @@ function setupEventListeners() {
                 await loadUserData(id);
                 DOMElements.loginOverlay.classList.remove('active');
                 showApp();
+                updateCharts(); // Ensure charts are correctly rendered after showing the container
                 showToast(`Access granted: ${id}`, 'success');
             } catch (error) {
                 showToast("Connection error. Using local data if available.", "warning");

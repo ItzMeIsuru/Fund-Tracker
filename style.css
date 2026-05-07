@@ -180,6 +180,37 @@ h3 {
     gap: 6px;
 }
 
+.label-with-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.savings-mode-toggle {
+    display: flex;
+    background: var(--input-border);
+    border-radius: var(--border-radius-sm);
+    padding: 2px;
+}
+
+.mode-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.mode-btn.active {
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
 .input-group label {
     font-size: 0.875rem;
     font-weight: 500;

@@ -123,7 +123,13 @@
                         <input type="number" id="budget-limit" placeholder="e.g. 10000" min="0">
                     </div>
                     <div class="input-group">
-                        <label for="savings-goal">Savings Target</label>
+                        <div class="label-with-toggle">
+                            <label for="savings-goal">Savings Target</label>
+                            <div class="savings-mode-toggle" id="savings-mode-toggle">
+                                <button type="button" class="mode-btn active" data-mode="income" title="Calculate from Total Income">From Income</button>
+                                <button type="button" class="mode-btn" data-mode="budget" title="Calculate from Remaining Budget">From Budget</button>
+                            </div>
+                        </div>
                         <input type="number" id="savings-goal" placeholder="e.g. 5000" min="0">
                     </div>
                     <div class="input-group">

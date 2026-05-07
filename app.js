@@ -12,7 +12,8 @@ let state = {
     chartTimeFilter: 7,
     daysLeft: 1,
     lastUpdatedDate: null,
-    editingId: null
+    editingId: null,
+    savingsMode: 'income' // 'income' or 'budget'
 };
 
 const currencySymbols = {
@@ -122,7 +123,8 @@ const DOMElements = {
     expensePieChartCtx: document.getElementById('expensePieChart').getContext('2d'),
     weeklyBarChartCtx: document.getElementById('weeklyBarChart').getContext('2d'),
 
-    filterBtns: document.querySelectorAll('.filter-btn')
+    filterBtns: document.querySelectorAll('.filter-btn'),
+    savingsModeBtns: document.querySelectorAll('.mode-btn')
 };
 
 // ============================================
@@ -290,6 +292,17 @@ function updateUI() {
     DOMElements.savingsGoalInput.value = state.savingsGoal ? convertFromBase(state.savingsGoal, state.currency).toFixed(0) : '';
     DOMElements.currencySelector.value = state.currency || 'LKR';
 
+    // Update savings mode toggle UI
+    if (DOMElements.savingsModeBtns) {
+        DOMElements.savingsModeBtns.forEach(btn => {
+            if (btn.dataset.mode === state.savingsMode) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
     // Calculate totals (Internal LKR)
     const incomeLKR = state.transactions
         .filter(t => t.type === 'income')
@@ -335,13 +348,16 @@ function updateUI() {
     handleDailyBudget(remainingBudgetLKR);
 
     // Savings Progress Calculation
-    // Only unbudgeted income counts as savings
-    const unbudgetedIncomeLKR = incomeLKR - budgetedIncomeLKR;
-    // If we overspent the effective budget (limit + budgeted income), it eats into unbudgeted savings
-    const budgetOverspend = Math.max(0, expenseLKR - effectiveBudgetLKR);
-    const savingsLKR = unbudgetedIncomeLKR - budgetOverspend;
+    let progressSourceLKR = 0;
+    if (state.savingsMode === 'budget') {
+        // From Budget: Remaining Budget
+        progressSourceLKR = remainingBudgetLKR;
+    } else {
+        // From Income: Total Income - Total Expenses
+        progressSourceLKR = incomeLKR - expenseLKR;
+    }
 
-    handleSavingsProgress(savingsLKR);
+    handleSavingsProgress(progressSourceLKR);
 
     renderTransactions();
     updateCharts();
@@ -742,6 +758,14 @@ function setupEventListeners() {
 
     DOMElements.cancelEditBtn.addEventListener('click', () => {
         cancelEdit();
+    });
+
+    DOMElements.savingsModeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            state.savingsMode = e.target.dataset.mode;
+            saveState();
+            updateUI();
+        });
     });
 
     DOMElements.addTransactionForm.addEventListener('submit', (e) => {

@@ -586,14 +586,19 @@ function updateCharts() {
     const filteredExpenses = filterTransactionsByDays(daysCount).filter(t => t.type === 'expense');
 
     // 1. Pie Chart for Categories
-    const categories = ['Food', 'Transport', 'Rent', 'Entertainment', 'Books', 'Other'];
+    const categories = ['Breakfast', 'Lunch', 'Dinner', 'Transport', 'Rent', 'Entertainment', 'Books', 'Other'];
     const categoryTotals = categories.map(cat => {
         // sum in base LKR
-        const totalLKR = filteredExpenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0);
+        const totalLKR = filteredExpenses.filter(e => {
+            if (e.category === cat) return true;
+            // Legacy support: count 'Food' as 'Lunch'
+            if (cat === 'Lunch' && e.category === 'Food') return true;
+            return false;
+        }).reduce((sum, e) => sum + e.amount, 0);
         return convertFromBase(totalLKR, state.currency); // chart visual in target currency
     });
 
-    const pieColors = ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#94a3b8'];
+    const pieColors = ['#fbbf24', '#f87171', '#be123c', '#34d399', '#60a5fa', '#a78bfa', '#2dd4bf', '#94a3b8'];
 
     if (pieChartInstance) pieChartInstance.destroy();
 

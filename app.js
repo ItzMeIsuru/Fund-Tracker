@@ -321,7 +321,8 @@ function updateUI() {
         return effectiveBudget - expenseLKR;
     }
 
-    const remainingBudgetLKR = calculateRemainingBudget();
+    const totalRemainingBudgetLKR = calculateRemainingBudget();
+    const spendableRemainingBudgetLKR = state.savingsMode === 'budget' ? totalRemainingBudgetLKR - state.savingsGoal : totalRemainingBudgetLKR;
     const effectiveBudgetLKR = state.budgetLimit + budgetedIncomeLKR;
 
     const todayStart = new Date();
@@ -333,25 +334,26 @@ function updateUI() {
     DOMElements.totalIncome.textContent = formatCurrency(incomeLKR);
     DOMElements.totalExpense.textContent = formatCurrency(todaysExpensesLKR);
 
-    // Total Balance is now Remaining Budget
+    // Total Balance is now Remaining Budget (Spendable)
     const balanceEl = DOMElements.totalBalance;
-    if (remainingBudgetLKR < 0 && state.budgetLimit > 0) {
+    if (spendableRemainingBudgetLKR < 0 && state.budgetLimit > 0) {
         balanceEl.classList.add('text-danger', 'over-budget');
-        balanceEl.innerHTML = `${formatCurrency(remainingBudgetLKR)} <span class="over-budget-badge">Over Budget</span>`;
+        balanceEl.innerHTML = `${formatCurrency(spendableRemainingBudgetLKR)} <span class="over-budget-badge">Over Budget</span>`;
     } else {
         balanceEl.classList.remove('text-danger', 'over-budget');
-        balanceEl.textContent = formatCurrency(remainingBudgetLKR);
+        balanceEl.textContent = formatCurrency(spendableRemainingBudgetLKR);
     }
 
     // Warnings and savings progress
-    handleBudgetWarning(expenseLKR, effectiveBudgetLKR);
-    handleDailyBudget(remainingBudgetLKR);
+    // Warning logic should consider the reduced budget
+    handleBudgetWarning(expenseLKR, state.savingsMode === 'budget' ? effectiveBudgetLKR - state.savingsGoal : effectiveBudgetLKR);
+    handleDailyBudget(spendableRemainingBudgetLKR);
 
     // Savings Progress Calculation
     let progressSourceLKR = 0;
     if (state.savingsMode === 'budget') {
-        // From Budget: Remaining Budget
-        progressSourceLKR = remainingBudgetLKR;
+        // From Budget: Total Remaining Budget (before reduction for display)
+        progressSourceLKR = totalRemainingBudgetLKR;
     } else {
         // From Income: Total Income - Total Expenses
         progressSourceLKR = incomeLKR - expenseLKR;

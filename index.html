@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal Finance Tracker for Students">
+    <title>Student Finance Tracker</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="light-theme">
+    <div id="emoji-container" class="emoji-container"></div>
+    <div id="overspend-overlay" class="overspend-overlay"></div>
+
+    <!-- Mock Login Overlay -->
+    <div id="login-overlay" class="overlay">
+        <div class="login-card glass-panel">
+            <div class="login-icon">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h2>Welcome Back!</h2>
+            <p>Manage your finances easily.</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Student ID / Unique ID</label>
+                    <input type="text" id="username" placeholder="e.g. CT/2023/028" required>
+                </div>
+                <button type="submit" class="btn-primary">Enter Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Content -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Sidebar / Header Area (Responsive) -->
+        <header class="app-header glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <h1>FinanceTracker</h1>
+            </div>
+            <div class="user-greeting">
+                <select id="currency-selector" class="currency-selector" title="Select Currency">
+                    <option value="LKR">LKR (Rs)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="INR" selected>INR (₹)</option>
+                    <option value="EUR">EUR (€)</option>
+                </select>
+                <span id="greeting-text">Hello, Student!</span>
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <div id="sync-status" class="sync-status unconfigured" title="Cloud Sync Status">
+                    <i class="fa-solid fa-cloud"></i>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Dashboard Summary -->
+            <section class="dashboard-summary">
+                <div class="summary-card balance glass-panel">
+                    <h3>Remaining Budget</h3>
+                    <h2 id="total-balance" class="amount-display">0</h2>
+                    <p class="subtitle" id="balance-warning"></p>
+                    <div class="daily-allowance-info">
+                        <span>Daily Allowance: <i id="daily-warning-sign"
+                                class="fa-solid fa-triangle-exclamation warning-pulse"></i></span>
+                        <span id="daily-allowance-value" class="value">0</span>
+                    </div>
+                </div>
+                <div class="summary-card income glass-panel">
+                    <div class="card-icon"><i class="fa-solid fa-arrow-down"></i></div>
+                    <div>
+                        <h3>Income</h3>
+                        <h2 id="total-income" class="text-success amount-display">0</h2>
+                    </div>
+                </div>
+                <div class="summary-card expense glass-panel">
+                    <div class="card-icon"><i class="fa-solid fa-arrow-up"></i></div>
+                    <div>
+                        <h3>Expenses</h3>
+                        <h2 id="total-expense" class="text-danger amount-display">0</h2>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Charts Section (Analytics) -->
+            <section class="charts-section glass-panel fade-in">
+                <div class="section-header space-between">
+                    <h2><i class="fa-solid fa-chart-line"></i> Analytics</h2>
+                    <div class="time-filter-toggle">
+                        <button class="filter-btn active" data-days="7">7 Days</button>
+                        <button class="filter-btn" data-days="30">30 Days</button>
+                    </div>
+                </div>
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <canvas id="expensePieChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="weeklyBarChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Goals Setting Section -->
+            <section class="goals-section glass-panel fade-in">
+                <div class="section-header">
+                    <h2><i class="fa-solid fa-bullseye"></i> Monthly Goals</h2>
+                </div>
+                <div class="goals-grid">
+                    <div class="input-group">
+                        <label for="budget-limit">Monthly Budget Limit</label>
+                        <input type="number" id="budget-limit" placeholder="e.g. 10000" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="savings-goal">Savings Target</label>
+                        <input type="number" id="savings-goal" placeholder="e.g. 5000" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="days-left">Days Left in Month</label>
+                        <input type="number" id="days-left" placeholder="e.g. 15" min="1">
+                    </div>
+                    <div class="goal-progress">
+                        <p>Savings Progress: <span id="savings-progress-text">0%</span></p>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="savings-progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="content-grid">
+                <!-- Transaction Form -->
+                <section class="transaction-form glass-panel fade-in">
+                    <div class="section-header">
+                        <h2 id="form-header"><i class="fa-solid fa-plus-circle"></i> Add Transaction</h2>
+                    </div>
+                    <form id="add-transaction-form">
+                        <div class="form-tabs">
+                            <button type="button" class="tab-btn active" data-type="expense">Expense</button>
+                            <button type="button" class="tab-btn" data-type="income">Income</button>
+                        </div>
+                        <div class="input-group">
+                            <label for="transaction-desc">Description</label>
+                            <input type="text" id="transaction-desc" placeholder="e.g. Lunch at canteen" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="transaction-time">Date & Time</label>
+                            <input type="datetime-local" id="transaction-time">
+                        </div>
+                        <div class="input-group">
+                            <label for="transaction-amount">Amount</label>
+                            <input type="number" id="transaction-amount" placeholder="0" required min="1">
+                        </div>
+                        <div class="input-group" id="category-group">
+                            <label for="transaction-category">Category</label>
+                            <select id="transaction-category">
+                                <option value="Food">🍔 Food</option>
+                                <option value="Transport">🚌 Transport</option>
+                                <option value="Rent">🏠 Rent</option>
+                                <option value="Entertainment">🎬 Entertainment</option>
+                                <option value="Books">📚 Books</option>
+                                <option value="Other">📦 Other</option>
+                            </select>
+                        </div>
+                        <div class="input-group hidden" id="budget-toggle-group">
+                            <label for="form-in-budget">Add to Budget?</label>
+                            <label class="switch">
+                                <input type="checkbox" id="form-in-budget">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <button type="submit" id="submit-btn" class="btn-primary w-100">Add Transaction</button>
+                        <button type="button" id="cancel-edit-btn" class="btn-secondary w-100 hidden"
+                            style="margin-top: 8px;">Cancel Edit</button>
+                    </form>
+                </section>
+
+                </section>
+            </div>
+            </div>
+
+            <!-- Transaction History -->
+            <section class="transaction-history glass-panel fade-in">
+                <div class="section-header space-between">
+                    <h2><i class="fa-solid fa-list-ul"></i> Recent Transactions</h2>
+                    <div>
+                        <button id="export-csv" class="btn-secondary btn-sm"><i class="fa-solid fa-download"></i>
+                            CSV</button>
+                        <button id="reset-data" class="btn-danger btn-sm"><i class="fa-solid fa-trash"></i>
+                            Reset</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Date & Time</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-list">
+                            <!-- Transactions dynamically injected here -->
+                        </tbody>
+                    </table>
+                    <div id="empty-state" class="empty-state">
+                        <i class="fa-solid fa-receipt"></i>
+                        <p>No transactions yet. Start adding some!</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+</body>
+</html>

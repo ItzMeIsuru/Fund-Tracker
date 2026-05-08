@@ -79,7 +79,26 @@ let barChartInstance = null;
 const DOMElements = {
     loginOverlay: document.getElementById('login-overlay'),
     loginForm: document.getElementById('login-form'),
-    usernameInput: document.getElementById('username'),
+    
+    // Auth & Account
+    authTabBtns: document.querySelectorAll('.auth-tab-btn'),
+    loginSection: document.getElementById('login-section'),
+    registerSection: document.getElementById('register-section'),
+    registerForm: document.getElementById('register-form'),
+    loginIdentifierInput: document.getElementById('login-identifier'),
+    loginPasswordInput: document.getElementById('login-password'),
+    registerEmailInput: document.getElementById('register-email'),
+    registerUsernameInput: document.getElementById('register-username'),
+    registerPasswordInput: document.getElementById('register-password'),
+    
+    accountOverlay: document.getElementById('account-overlay'),
+    accountIconBtn: document.getElementById('account-icon-btn'),
+    closeAccountBtn: document.getElementById('close-account-btn'),
+    accountForm: document.getElementById('account-form'),
+    accountUsernameInput: document.getElementById('account-username'),
+    accountEmailInput: document.getElementById('account-email'),
+    accountPasswordInput: document.getElementById('account-password'),
+
     appContainer: document.getElementById('app-container'),
     greetingText: document.getElementById('greeting-text'),
     themeToggle: document.getElementById('theme-toggle'),
@@ -718,30 +737,155 @@ function updateCharts() {
 // Event Listeners
 // ============================================
 function setupEventListeners() {
+    // Auth Tabs Switching
+    DOMElements.authTabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            DOMElements.authTabBtns.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            if (e.target.dataset.tab === 'login') {
+                DOMElements.loginSection.classList.remove('hidden');
+                DOMElements.registerSection.classList.add('hidden');
+            } else {
+                DOMElements.loginSection.classList.add('hidden');
+                DOMElements.registerSection.classList.remove('hidden');
+            }
+        });
+    });
+
+    // Login Form Submit
     DOMElements.loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = DOMElements.usernameInput.value.trim();
-        if (id) {
-            const loginBtn = DOMElements.loginForm.querySelector('button');
+        const identifier = DOMElements.loginIdentifierInput.value.trim();
+        const password = DOMElements.loginPasswordInput.value.trim();
+        
+        if (identifier) {
+            const loginBtn = document.getElementById('login-btn');
             const originalText = loginBtn.textContent;
             
-            loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+            loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
             loginBtn.disabled = true;
 
             try {
-                await loadUserData(id);
+                // Check auth
+                const res = await fetch('/.netlify/functions/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login',
+                        payload: { identifier, password }
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Login failed');
+
+                await loadUserData(data.username);
                 DOMElements.loginOverlay.classList.remove('active');
                 showApp();
-                updateCharts(); // Ensure charts are correctly rendered after showing the container
-                showToast(`Access granted: ${id}`, 'success');
+                updateCharts();
+                showToast(`Welcome back, ${data.username}!`, 'success');
             } catch (error) {
-                showToast("Connection error. Using local data if available.", "warning");
-                DOMElements.loginOverlay.classList.remove('active');
-                showApp();
+                // Check if it's connection error or real auth error
+                if (error.message === 'Failed to fetch') {
+                     showToast("Connection error. Using local data if available.", "warning");
+                     await loadUserData(identifier);
+                     DOMElements.loginOverlay.classList.remove('active');
+                     showApp();
+                } else {
+                     showToast(error.message, "danger");
+                }
             } finally {
                 loginBtn.textContent = originalText;
                 loginBtn.disabled = false;
             }
+        }
+    });
+
+    // Register Form Submit
+    DOMElements.registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = DOMElements.registerEmailInput.value.trim();
+        const username = DOMElements.registerUsernameInput.value.trim();
+        const password = DOMElements.registerPasswordInput.value.trim();
+
+        if (email && username && password) {
+            const registerBtn = document.getElementById('register-btn');
+            const originalText = registerBtn.textContent;
+            
+            registerBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+            registerBtn.disabled = true;
+
+            try {
+                const res = await fetch('/.netlify/functions/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'register',
+                        payload: { username, email, password }
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Registration failed');
+
+                await loadUserData(username);
+                DOMElements.loginOverlay.classList.remove('active');
+                showApp();
+                updateCharts();
+                showToast(`Registration successful! Welcome, ${username}.`, 'success');
+            } catch (error) {
+                showToast(error.message, "danger");
+            } finally {
+                registerBtn.textContent = originalText;
+                registerBtn.disabled = false;
+            }
+        }
+    });
+
+    // Account Overlay Triggers
+    DOMElements.accountIconBtn.addEventListener('click', () => {
+        DOMElements.accountUsernameInput.value = state.user;
+        DOMElements.accountEmailInput.value = ''; // We don't store email in local state currently
+        DOMElements.accountPasswordInput.value = '';
+        DOMElements.accountOverlay.classList.add('active');
+    });
+
+    DOMElements.closeAccountBtn.addEventListener('click', () => {
+        DOMElements.accountOverlay.classList.remove('active');
+    });
+
+    // Account Form Submit
+    DOMElements.accountForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = DOMElements.accountEmailInput.value.trim();
+        const password = DOMElements.accountPasswordInput.value.trim();
+        const updateBtn = document.getElementById('update-account-btn');
+        const originalText = updateBtn.textContent;
+        
+        updateBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        updateBtn.disabled = true;
+
+        try {
+            const res = await fetch('/.netlify/functions/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update',
+                    payload: { username: state.user, email, password: password || undefined }
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Update failed');
+
+            showToast('Account updated successfully!', 'success');
+            DOMElements.accountOverlay.classList.remove('active');
+        } catch (error) {
+            showToast(error.message, "danger");
+        } finally {
+            updateBtn.textContent = originalText;
+            updateBtn.disabled = false;
         }
     });
 

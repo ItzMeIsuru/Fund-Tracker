@@ -24,20 +24,78 @@
 <body class="light-theme">
     <div id="overspend-overlay" class="overspend-overlay"></div>
 
-    <!-- Mock Login Overlay -->
+    <!-- Auth Overlay (Login/Register) -->
     <div id="login-overlay" class="overlay">
         <div class="login-card glass-panel">
             <div class="login-icon">
                 <i class="fa-solid fa-wallet"></i>
             </div>
-            <h2>Welcome Back!</h2>
-            <p>Manage your finances easily.</p>
-            <form id="login-form">
+            
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn active" data-tab="login">Login</button>
+                <button type="button" class="auth-tab-btn" data-tab="register">Register</button>
+            </div>
+
+            <div id="login-section" class="auth-section">
+                <h2>Welcome Back!</h2>
+                <p>Manage your finances easily.</p>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="login-identifier">Username / Email</label>
+                        <input type="text" id="login-identifier" placeholder="e.g. johndoe or john@example.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password">
+                        <small class="help-text text-secondary" style="font-size: 0.8rem; margin-top: 4px; display: block;">Leave blank if old user logging in for the first time.</small>
+                    </div>
+                    <button type="submit" class="btn-primary" id="login-btn">Enter Dashboard</button>
+                </form>
+            </div>
+
+            <div id="register-section" class="auth-section hidden">
+                <h2>Create Account</h2>
+                <p>Join to start tracking.</p>
+                <form id="register-form">
+                    <div class="input-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" placeholder="e.g. john@example.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" placeholder="Choose a unique username" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" placeholder="Create a password" required>
+                    </div>
+                    <button type="submit" class="btn-primary" id="register-btn">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Settings Overlay -->
+    <div id="account-overlay" class="overlay">
+        <div class="account-card glass-panel">
+            <div class="section-header space-between">
+                <h2><i class="fa-solid fa-user-gear"></i> Account Settings</h2>
+                <button id="close-account-btn" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="account-form">
                 <div class="input-group">
-                    <label for="username">Your Name / Student Number</label>
-                    <input type="text" id="username" placeholder="e.g. Your Name / Student Number" required>
+                    <label for="account-username">Username</label>
+                    <input type="text" id="account-username" readonly disabled>
                 </div>
-                <button type="submit" class="btn-primary">Enter Dashboard</button>
+                <div class="input-group">
+                    <label for="account-email">Email</label>
+                    <input type="email" id="account-email" placeholder="Add or update email">
+                </div>
+                <div class="input-group">
+                    <label for="account-password">New Password</label>
+                    <input type="password" id="account-password" placeholder="Leave blank to keep current">
+                </div>
+                <button type="submit" class="btn-primary w-100" id="update-account-btn">Save Changes</button>
             </form>
         </div>
     </div>
@@ -58,6 +116,9 @@
                     <option value="EUR">EUR (€)</option>
                 </select>
                 <span id="greeting-text">Hello, Student!</span>
+                <button id="account-icon-btn" class="btn-icon" aria-label="Account Settings" title="Account Settings">
+                    <i class="fa-solid fa-circle-user"></i>
+                </button>
                 <button id="theme-toggle" class="btn-icon" aria-label="Toggle Theme">
                     <i class="fa-solid fa-moon"></i>
                 </button>
@@ -241,6 +302,11 @@
                 </div>
             </section>
         </main>
+
+        <!-- Copyright Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 Student Finance Tracker. All rights reserved.</p>
+        </footer>
     </div>
 
     <!-- Notification Toast -->

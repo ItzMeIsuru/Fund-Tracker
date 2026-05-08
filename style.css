@@ -366,6 +366,41 @@ button {
     margin-bottom: 24px;
 }
 
+/* Auth Tabs */
+.auth-tabs {
+    display: flex;
+    background: var(--input-border);
+    border-radius: var(--border-radius-sm);
+    padding: 4px;
+    margin-bottom: 24px;
+}
+
+.auth-tab-btn {
+    flex: 1;
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 10px 0;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.auth-tab-btn.active {
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.auth-section {
+    animation: fadeIn var(--transition-fast) ease;
+}
+
+/* Account Overlay specific */
+.account-card {
+    width: 100%;
+    max-width: 400px;
+}
+
 /* ============================================
    App Layout
    ============================================ */
@@ -393,6 +428,15 @@ button {
     display: flex;
     flex-direction: column;
     gap: 32px;
+    flex-grow: 1;
+}
+
+.app-footer {
+    text-align: center;
+    padding: 24px 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: auto;
 }
 
 .logo {

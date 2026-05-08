@@ -54,7 +54,7 @@ exports.handler = async (event, context) => {
                 VALUES (${username}, ${email}, ${password})
             `;
 
-            return { statusCode: 200, headers, body: JSON.stringify({ message: 'Registration successful', username }) };
+            return { statusCode: 200, headers, body: JSON.stringify({ message: 'Registration successful', username, email }) };
         } 
         
         else if (action === 'login') {
@@ -66,7 +66,7 @@ exports.handler = async (event, context) => {
 
             // Check new users table
             const user = await sql`
-                SELECT username, password FROM users 
+                SELECT username, email, password FROM users 
                 WHERE username = ${identifier} OR email = ${identifier}
             `;
 
@@ -75,7 +75,7 @@ exports.handler = async (event, context) => {
                 if (user[0].password !== password) {
                     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Invalid credentials' }) };
                 }
-                return { statusCode: 200, headers, body: JSON.stringify({ message: 'Login successful', username: user[0].username }) };
+                return { statusCode: 200, headers, body: JSON.stringify({ message: 'Login successful', username: user[0].username, email: user[0].email }) };
             }
 
             // Fallback for old users in user_data

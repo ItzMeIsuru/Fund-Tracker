@@ -3,6 +3,7 @@
 // ============================================
 let state = {
     user: '',
+    email: '',
     theme: 'light',
     currency: 'LKR',
     budgetLimit: 0, // Stored in LKR base
@@ -781,6 +782,9 @@ function setupEventListeners() {
                 if (!res.ok) throw new Error(data.error || 'Login failed');
 
                 await loadUserData(data.username);
+                if (data.email) state.email = data.email;
+                saveState();
+                
                 DOMElements.loginOverlay.classList.remove('active');
                 showApp();
                 updateCharts();
@@ -833,6 +837,9 @@ function setupEventListeners() {
                 if (!res.ok) throw new Error(data.error || 'Registration failed');
 
                 await loadUserData(username);
+                state.email = data.email || email;
+                saveState();
+                
                 DOMElements.loginOverlay.classList.remove('active');
                 showApp();
                 updateCharts();
@@ -853,7 +860,7 @@ function setupEventListeners() {
     // Account Overlay Triggers
     DOMElements.accountIconBtn.addEventListener('click', () => {
         DOMElements.accountUsernameInput.value = state.user;
-        DOMElements.accountEmailInput.value = ''; // We don't store email in local state currently
+        DOMElements.accountEmailInput.value = state.email || '';
         DOMElements.accountPasswordInput.value = '';
         DOMElements.accountOverlay.classList.add('active');
     });
@@ -885,6 +892,9 @@ function setupEventListeners() {
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Update failed');
+
+            if (email) state.email = email;
+            saveState();
 
             showToast('Account updated successfully!', 'success');
             DOMElements.accountOverlay.classList.remove('active');

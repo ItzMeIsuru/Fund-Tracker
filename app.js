@@ -809,6 +809,9 @@ function setupEventListeners() {
         const username = DOMElements.registerUsernameInput.value.trim();
         const password = DOMElements.registerPasswordInput.value.trim();
 
+        // Reset error state
+        DOMElements.registerUsernameInput.classList.remove('input-error');
+
         if (email && username && password) {
             const registerBtn = document.getElementById('register-btn');
             const originalText = registerBtn.textContent;
@@ -836,6 +839,10 @@ function setupEventListeners() {
                 showToast(`Registration successful! Welcome, ${username}.`, 'success');
             } catch (error) {
                 showToast(error.message, "danger");
+                if (error.message.includes('username is already taken')) {
+                    DOMElements.registerUsernameInput.classList.add('input-error');
+                    DOMElements.registerUsernameInput.focus();
+                }
             } finally {
                 registerBtn.textContent = originalText;
                 registerBtn.disabled = false;

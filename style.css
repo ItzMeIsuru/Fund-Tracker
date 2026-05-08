@@ -237,6 +237,12 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
 }
 
+input.input-error,
+select.input-error {
+    border-color: var(--danger-color) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
 input[type="datetime-local"] {
     cursor: pointer;
 }

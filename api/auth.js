@@ -1,6 +1,6 @@
 const { neon } = require('@neondatabase/serverless');
 
-exports.handler = async (event, context) => {
+module.exports = async (req, res) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
@@ -8,12 +8,15 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
     };
 
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
+    // Set headers
+    Object.keys(headers).forEach(key => res.setHeader(key, headers[key]));
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
     }
 
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, headers, body: 'Method Not Allowed' };
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
     }
 
     const sql = neon(process.env.DATABASE_URL);
@@ -28,25 +31,25 @@ exports.handler = async (event, context) => {
             );
         `;
 
-        const { action, payload } = JSON.parse(event.body);
+        const { action, payload } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
         if (action === 'register') {
             const { username, email, password } = payload;
             
             if (!username || !email || !password) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing required fields' }) };
+                return res.status(400).json({ error: 'Missing required fields' });
             }
 
             // Check if username is taken
             const userCheck = await sql`SELECT username FROM users WHERE username = ${username}`;
             if (userCheck.length > 0) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'username is already taken use another username' }) };
+                return res.status(400).json({ error: 'username is already taken use another username' });
             }
 
             // Check if email is taken
             const emailCheck = await sql`SELECT email FROM users WHERE email = ${email}`;
             if (emailCheck.length > 0) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'email is already registered' }) };
+                return res.status(400).json({ error: 'email is already registered' });
             }
 
             await sql`
@@ -54,14 +57,14 @@ exports.handler = async (event, context) => {
                 VALUES (${username}, ${email}, ${password})
             `;
 
-            return { statusCode: 200, headers, body: JSON.stringify({ message: 'Registration successful', username, email }) };
+            return res.status(200).json({ message: 'Registration successful', username, email });
         } 
         
         else if (action === 'login') {
             const { identifier, password } = payload; // identifier can be email or username
             
             if (!identifier) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Identifier required' }) };
+                return res.status(400).json({ error: 'Identifier required' });
             }
 
             // Check new users table
@@ -73,9 +76,9 @@ exports.handler = async (event, context) => {
             if (user.length > 0) {
                 // User exists in new table, verify password
                 if (user[0].password !== password) {
-                    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Invalid credentials' }) };
+                    return res.status(401).json({ error: 'Invalid credentials' });
                 }
-                return { statusCode: 200, headers, body: JSON.stringify({ message: 'Login successful', username: user[0].username, email: user[0].email }) };
+                return res.status(200).json({ message: 'Login successful', username: user[0].username, email: user[0].email });
             }
 
             // Fallback for old users in user_data
@@ -85,24 +88,24 @@ exports.handler = async (event, context) => {
 
             if (oldUser.length > 0) {
                 // Old user found, let them log in without checking password
-                return { statusCode: 200, headers, body: JSON.stringify({ message: 'Legacy login successful', username: oldUser[0].user_id }) };
+                return res.status(200).json({ message: 'Legacy login successful', username: oldUser[0].user_id });
             }
 
-            return { statusCode: 401, headers, body: JSON.stringify({ error: 'Invalid credentials' }) };
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
 
         else if (action === 'update') {
             const { username, email, password } = payload;
             
             if (!username) {
-                return { statusCode: 400, headers, body: JSON.stringify({ error: 'Username required' }) };
+                return res.status(400).json({ error: 'Username required' });
             }
 
             // Ensure email is unique if provided and not the same user
             if (email) {
                 const emailCheck = await sql`SELECT username FROM users WHERE email = ${email} AND username != ${username}`;
                 if (emailCheck.length > 0) {
-                    return { statusCode: 400, headers, body: JSON.stringify({ error: 'email is already registered to another account' }) };
+                    return res.status(400).json({ error: 'email is already registered to another account' });
                 }
             }
 
@@ -115,17 +118,13 @@ exports.handler = async (event, context) => {
                     password = COALESCE(EXCLUDED.password, users.password)
             `;
 
-            return { statusCode: 200, headers, body: JSON.stringify({ message: 'Account updated successfully' }) };
+            return res.status(200).json({ message: 'Account updated successfully' });
         }
 
-        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid action' }) };
+        return res.status(400).json({ error: 'Invalid action' });
 
     } catch (error) {
         console.error('Database Error:', error);
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: 'Database error', details: error.message })
-        };
+        return res.status(500).json({ error: 'Database error', details: error.message });
     }
 };

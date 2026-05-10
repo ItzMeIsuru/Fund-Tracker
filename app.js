@@ -119,6 +119,7 @@ const DOMElements = {
 
     dailyAllowanceValue: document.getElementById('daily-allowance-value'),
     dailyWarningSign: document.getElementById('daily-warning-sign'),
+    dailyRemainingValue: document.getElementById('daily-remaining-value'),
 
     addTransactionForm: document.getElementById('add-transaction-form'),
     tabBtns: document.querySelectorAll('.tab-btn'),
@@ -427,6 +428,18 @@ function handleDailyBudget(remainingBudgetLKR) {
     const todaysExpensesLKR = state.transactions
         .filter(t => t.type === 'expense' && t.timestamp >= todayStart.getTime())
         .reduce((sum, t) => sum + t.amount, 0);
+
+    const dailyRemainingLKR = dailyAllowanceLKR - todaysExpensesLKR;
+    if (DOMElements.dailyRemainingValue) {
+        DOMElements.dailyRemainingValue.textContent = formatCurrency(dailyRemainingLKR);
+        if (dailyRemainingLKR < 0) {
+            DOMElements.dailyRemainingValue.classList.add('text-danger');
+            DOMElements.dailyRemainingValue.classList.remove('text-success');
+        } else {
+            DOMElements.dailyRemainingValue.classList.add('text-success');
+            DOMElements.dailyRemainingValue.classList.remove('text-danger');
+        }
+    }
 
     // Trigger alert if today's expenses exceed daily allowance OR total budget is negative
     if (todaysExpensesLKR > dailyAllowanceLKR && dailyAllowanceLKR > 0) {

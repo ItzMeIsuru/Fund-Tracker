@@ -46,16 +46,9 @@ Fund Tracker is a premium, state-of-the-art personal finance management tool des
    ```
 
 2. **Run Locally**:
-   Ensure you have Node.js installed.
+   Simply open `index.html` in any modern web browser. For the best experience (avoiding CORS issues with external APIs), use a simple local server:
    ```bash
-   # Install dependencies
-   npm install
-
-   # Copy the example environment file and add your Neon DATABASE_URL
-   cp .env.example .env
-
-   # Start the Express server
-   npm start
+   npx http-server ./
    ```
 
 3. **Backend Sync (Optional)**:

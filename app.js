@@ -265,8 +265,8 @@ function saveState() {
         syncEl.className = 'sync-status syncing';
     }
 
-    // Sync with Neon DB via Vercel Functions
-    fetch('/api/sync', {
+    // Sync with Neon DB via Netlify Functions
+    fetch('/.netlify/functions/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: state.user, state: state })
@@ -294,8 +294,8 @@ async function loadUserData(userId) {
     if (syncEl) syncEl.className = 'sync-status syncing';
 
     try {
-        // Try fetching from Neon DB via Vercel Function
-        const response = await fetch(`/api/sync?userId=${encodeURIComponent(userId)}`);
+        // Try fetching from Neon DB via Netlify Function
+        const response = await fetch(`/.netlify/functions/sync?userId=${encodeURIComponent(userId)}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -433,11 +433,11 @@ function handleDailyBudget(remainingBudgetLKR) {
     if (DOMElements.dailyRemainingValue) {
         DOMElements.dailyRemainingValue.textContent = formatCurrency(dailyRemainingLKR);
         if (dailyRemainingLKR < 0) {
-            DOMElements.dailyRemainingValue.classList.add('text-danger');
             DOMElements.dailyRemainingValue.classList.remove('text-success');
+            DOMElements.dailyRemainingValue.classList.add('text-danger');
         } else {
-            DOMElements.dailyRemainingValue.classList.add('text-success');
             DOMElements.dailyRemainingValue.classList.remove('text-danger');
+            DOMElements.dailyRemainingValue.classList.add('text-success');
         }
     }
 
@@ -782,7 +782,7 @@ function setupEventListeners() {
 
             try {
                 // Check auth
-                const res = await fetch('/api/auth', {
+                const res = await fetch('/.netlify/functions/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -837,7 +837,7 @@ function setupEventListeners() {
             registerBtn.disabled = true;
 
             try {
-                const res = await fetch('/api/auth', {
+                const res = await fetch('/.netlify/functions/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -894,7 +894,7 @@ function setupEventListeners() {
         updateBtn.disabled = true;
 
         try {
-            const res = await fetch('/api/auth', {
+            const res = await fetch('/.netlify/functions/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
